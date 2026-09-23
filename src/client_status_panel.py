@@ -1,14 +1,3 @@
-"""
-Panel de clientes (Paso 6 del proyecto Global Dispatch).
-
-- Consume la cola Q.client.status.
-- Muestra en una página web el estado (Accepted/Cancelled) de cada
-  solicitud enviada, en tiempo real (la página hace polling).
-
-Cómo correrlo:
-    python src/client_status_panel.py
-Luego abre http://127.0.0.1:5002 en el navegador.
-"""
 import json
 import threading
 
@@ -23,8 +12,7 @@ from solace_utils import build_messaging_service
 app = Flask(__name__)
 
 _lock = threading.Lock()
-# shipperOrderId -> último status conocido (se guarda el historial completo,
-# más reciente al final, por si un mismo pedido cambia de estado)
+
 status_by_order = {}
 
 messaging_service = None
@@ -45,9 +33,9 @@ class ClientStatusHandler(MessageHandler):
             order_id = payload.get("shipperOrderId", "UNKNOWN")
             with _lock:
                 status_by_order[order_id] = payload
-            print(f"📋 Estado actualizado: {order_id} -> {payload.get('status')}")
+            print(f"Estado actualizado: {order_id} -> {payload.get('status')}")
         except json.JSONDecodeError:
-            print("❌ Mensaje no es JSON válido, se descarta.")
+            print(" Mensaje no es JSON válido, se descarta.")
         finally:
             self.receiver.ack(message)
 
@@ -56,7 +44,7 @@ def start_solace_listener():
     global messaging_service, receiver, handler
 
     messaging_service = build_messaging_service()
-    print("✅ Panel de clientes conectado a Solace.")
+    print(" Panel de clientes conectado a Solace.")
 
     queue = Queue.durable_exclusive_queue(config.QUEUE_CLIENT_STATUS)
     receiver = messaging_service.create_persistent_message_receiver_builder().build(queue)
@@ -64,7 +52,7 @@ def start_solace_listener():
 
     handler = ClientStatusHandler(receiver)
     receiver.receive_async(handler)
-    print(f"👂 Escuchando resultados en '{config.QUEUE_CLIENT_STATUS}'...")
+    print(f"Escuchando resultados en '{config.QUEUE_CLIENT_STATUS}'...")
 
 
 @app.route("/")

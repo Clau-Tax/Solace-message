@@ -38,7 +38,7 @@ class CarrierLoadsHandler(MessageHandler):
                 available_loads[order_id] = payload
             print(f" Nueva carga disponible: {order_id}")
         except json.JSONDecodeError:
-            print("❌ Mensaje no es JSON válido, se descarta.")
+            print(" Mensaje no es JSON válido, se descarta.")
         finally:
             self.receiver.ack(message)
 
@@ -59,7 +59,7 @@ def start_solace_listener():
 
     handler = CarrierLoadsHandler(receiver)
     receiver.receive_async(handler)
-    print(f"👂 Escuchando cargas disponibles en '{config.QUEUE_CARRIER_AVAILABLE_LOADS}'...")
+    print(f" Escuchando cargas disponibles en '{config.QUEUE_CARRIER_AVAILABLE_LOADS}'...")
 
 
 @app.route("/")
