@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Global Dispatch — Dashboard de Transportistas</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 24px; }
+  h1 { color: #1a2b4c; }
+  table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+  th { background: #1a2b4c; color: white; }
+  button { background: #2e7d32; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; }
+  button:hover { background: #256428; }
+  #empty { color: #777; padding: 20px; text-align: center; }
+</style>
+</head>
+<body>
+  <h1>Cargas disponibles</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Orden</th>
+        <th>Vehículo</th>
+        <th>Ruta</th>
+        <th>Pickup</th>
+        <th>Delivery</th>
+        <th>Precio</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="loads-body"></tbody>
+  </table>
+  <div id="empty" style="display:none;">No hay cargas disponibles por el momento...</div>
+
+<script>
+async function fetchLoads() {
+  const res = await fetch('/api/loads');
+  const loads = await res.json();
+  const tbody = document.getElementById('loads-body');
+  const empty = document.getElementById('empty');
+  tbody.innerHTML = '';
+
+  if (loads.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  loads.forEach(load => {
+    const vehicle = load.vehicles && load.vehicles[0]
+      ? `${load.vehicles[0].year} ${load.vehicles[0].make} ${load.vehicles[0].model}` : '-';
+    const route = load.stops && load.stops.length >= 2
+      ? `${load.stops[0].city}, ${load.stops[0].state} → ${load.stops[1].city}, ${load.stops[1].state}` : '-';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${load.shipperOrderId}</td>
+      <td>${vehicle}</td>
+      <td>${route}</td>
+      <td>${load.pickupDate || '-'}</td>
+      <td>${load.deliveryDate || '-'}</td>
+      <td>$${load.price || '-'}</td>
+      <td><button onclick="acceptLoad('${load.shipperOrderId}')">Aceptar</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function acceptLoad(orderId) {
+  const carrierName = prompt('Tu nombre (transportista):', 'Carrier Demo') || 'Unknown carrier';
+  const res = await fetch(`/api/loads/${orderId}/accept`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ carrierName })
+  });
+  if (res.ok) {
+    fetchLoads();
+  } else {
+    alert('Esta carga ya no está disponible.');
+    fetchLoads();
+  }
+}
+
+fetchLoads();
+setInterval(fetchLoads, 3000); // refresca cada 3 segundos
+</script>
+</body>
+</html>

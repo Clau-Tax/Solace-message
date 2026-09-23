@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Global Dispatch — Estado de mis Solicitudes</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 24px; }
+  h1 { color: #1a2b4c; }
+  table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+  th { background: #1a2b4c; color: white; }
+  .badge { padding: 4px 10px; border-radius: 12px; color: white; font-size: 13px; font-weight: bold; }
+  .badge-accepted { background: #2e7d32; }
+  .badge-cancelled { background: #c62828; }
+  #empty { color: #777; padding: 20px; text-align: center; }
+</style>
+</head>
+<body>
+  <h1>Estado de mis solicitudes</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Orden</th>
+        <th>Estado</th>
+        <th>Notas</th>
+      </tr>
+    </thead>
+    <tbody id="status-body"></tbody>
+  </table>
+  <div id="empty" style="display:none;">Aún no hay solicitudes procesadas...</div>
+
+<script>
+async function fetchStatus() {
+  const res = await fetch('/api/status');
+  const results = await res.json();
+  const tbody = document.getElementById('status-body');
+  const empty = document.getElementById('empty');
+  tbody.innerHTML = '';
+
+  if (results.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  results.forEach(r => {
+    const badgeClass = r.status === 'Accepted' ? 'badge-accepted' : 'badge-cancelled';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.shipperOrderId}</td>
+      <td><span class="badge ${badgeClass}">${r.status}</span></td>
+      <td>${r.notes || '-'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+fetchStatus();
+setInterval(fetchStatus, 3000);
+</script>
+</body>
+</html>
